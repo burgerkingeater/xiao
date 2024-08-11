@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Heart with Message for Xiao</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/fonts/helvetiker_regular.typeface.json"></script>
+    <script>
+        let scene, camera, renderer, heart;
+        let particles = [];
+        let textMeshes = [];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000);
+            document.body.appendChild(renderer.domElement);
+
+            // Create heart
+            const heartShape = new THREE.Shape();
+            heartShape.moveTo(25, 25);
+            heartShape.bezierCurveTo(25, 25, 20, 0, 0, 0);
+            heartShape.bezierCurveTo(-30, 0, -30, 35, -30, 35);
+            heartShape.bezierCurveTo(-30, 55, -10, 77, 25, 95);
+            heartShape.bezierCurveTo(60, 77, 80, 55, 80, 35);
+            heartShape.bezierCurveTo(80, 35, 80, 0, 50, 0);
+            heartShape.bezierCurveTo(35, 0, 25, 25, 25, 25);
+
+            const extrudeSettings = {
+                depth: 8,
+                bevelEnabled: true,
+                bevelSegments: 2,
+                steps: 2,
+                bevelSize: 1,
+                bevelThickness: 1
+            };
+
+            const geometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+            const material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            heart = new THREE.Mesh(geometry, material);
+            heart.scale.set(0.015, 0.015, 0.015);
+            heart.rotation.z = Math.PI;
+            heart.position.y = 2.5;
+            scene.add(heart);
+
+            // Create text
+            const loader = new THREE.FontLoader();
+            loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+                const message = "My Love Xiao, this is the very first program I wrote for you, it's plain and even bad looking, but my love for you is more than what I can program, Yours Cheng";
+                const lines = message.split(', ');
+                const textMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+
+                lines.forEach((line, index) => {
+                    const textGeometry = new THREE.TextGeometry(line, {
+                        font: font,
+                        size: 0.15,
+                        height: 0.03,
+                        curveSegments: 12,
+                        bevelEnabled: true,
+                        bevelThickness: 0.01,
+                        bevelSize: 0.005,
+                        bevelOffset: 0,
+                        bevelSegments: 5
+                    });
+                    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                    textGeometry.center();
+                    textMesh.position.y = 1 - index * 0.4;
+                    scene.add(textMesh);
+                    textMeshes.push(textMesh);
+                });
+            });
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+
+            camera.position.z = 5;
+        }
+
+        function createFirework() {
+            const colors = [0xff0000, 0xff69b4, 0xff1493, 0xff00ff];
+            const geometry = new THREE.SphereGeometry(0.05, 32, 32);
+            
+            for (let i = 0; i < 100; i++) {
+                const material = new THREE.MeshBasicMaterial({ color: colors[Math.floor(Math.random() * colors.length)] });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                particle.position.set(
+                    (Math.random() - 0.5) * 5,
+                    (Math.random() - 0.5) * 5,
+                    (Math.random() - 0.5) * 5
+                );
+                
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.05,
+                    (Math.random() - 0.5) * 0.05,
+                    (Math.random() - 0.5) * 0.05
+                );
+                
+                particle.life = 200;
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.position.add(particle.velocity);
+                particle.life--;
+
+                if (particle.life <= 0) {
+                    scene.remove(particle);
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (Math.random() < 0.03) {
+                createFirework();
+            }
+
+            updateParticles();
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+        animate();
+
+        window.addEventListener('resize', onWindowResize, false);
+    
+      document.addEventListener('click', function() {
+            if (audioContext && audioContext.state !== 'running') {
+                audioContext.resume();
+            }
+        });
+      
+    </script>
+</body>
+</html>
